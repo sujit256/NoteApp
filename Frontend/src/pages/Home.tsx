@@ -1,48 +1,94 @@
+import { useSearchParams } from "react-router-dom";
 import NoteCard from "../components/NoteCard";
 import { useNotes } from "../hooks/useNote";
 
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationLink,
+} from "../components/ui/pagination";
+
 const Home = () => {
-  const { data: notes, isLoading, error } = useNotes();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const page = Number(searchParams.get("page")) || 1;
+  const limit = Number(searchParams.get("limit")) || 10;
+  const title = searchParams.get("title") || "";
+
+  const { data, isLoading, error } = useNotes({ page, limit, title });
 
   if (isLoading)
     return (
-      <div className="flex w-full min-h-[70vh] items-center justify-center">
-        <div className="text-gray-400 text-lg animate-pulse">Loading notes...</div>
+      <div className="flex min-h-[70vh] items-center justify-center">
+        Loading notes...
       </div>
     );
 
   if (error)
     return (
-      <div className="flex w-full min-h-[70vh] items-center justify-center">
-        <div className="text-red-500 text-lg font-medium">
-          Error loading notes. Please try again.
-        </div>
+      <div className="flex min-h-[70vh] items-center justify-center text-red-500">
+        Failed to load notes
       </div>
     );
 
-  return (
-    <section className="w-full px-4 sm:px-6 md:px-8 lg:px-12 py-8 bg-gray-50 min-h-[90vh]">
-      {/* Header */}
-      <div className="mb-8 text-center sm:text-left">
-        <h1 className="text-3xl font-bold text-gray-900">Your Notes</h1>
-        <p className="text-gray-500 mt-1">
-          All your thoughts, ideas, and reminders in one place.
-        </p>
-      </div>
+  const { notes, total, totalPages } = data!;
 
-      {/* Empty State */}
-      {notes?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[50vh] text-gray-500">
-          <p className="text-lg font-medium">No notes found</p>
-          <p className="text-sm mt-1">Click “Add Note” to create your first note.</p>
-        </div>
+  const handlePageChange = (newPage: number) => {
+    setSearchParams({ page: String(newPage), limit: String(limit), title });
+  };
+
+  return (
+    <section className="px-6 py-8 bg-gray-50 min-h-[90vh]">
+      <h1 className="text-3xl font-bold mb-6">Your Notes</h1>
+
+      {notes.length === 0 ? (
+        <div className="text-center text-gray-500 mt-20">No notes found</div>
       ) : (
-        /* Notes Grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-          {notes?.map((note) => (
-            <NoteCard key={note._id} note={note} />
-          ))}
-        </div>
+        <>
+          {/* Notes Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
+            {notes.map((note) => (
+              <NoteCard key={note._id} note={note} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          <div className="mt-10 flex justify-center">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    className={page === 1 ? "pointer-events-none opacity-50" : ""}
+                    onClick={() => handlePageChange(page - 1)}
+                  />
+                </PaginationItem>
+
+                {/* Numbered Pages */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <PaginationItem key={p}>
+                    <PaginationLink
+                      href="#"
+                      isActive={p === page}
+                      onClick={() => handlePageChange(p)}
+                    >
+                      {p}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+
+                <PaginationItem>
+                  <PaginationNext
+                    className={page === totalPages ? "pointer-events-none opacity-50" : ""}
+                    onClick={() => handlePageChange(page + 1)}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </div>
+        </>
       )}
     </section>
   );

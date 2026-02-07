@@ -1,14 +1,22 @@
+import { toast } from "sonner";
 import { useForm } from "../hooks/useForm";
 import { useCreateNote } from "../hooks/useNote";
+import { useNavigate } from "react-router-dom";
 
 const CreateNote = () => {
   const { formValues, handleChange } = useForm({ title: "", content: "" });
   const createMutation = useCreateNote();
+  const navigate = useNavigate()
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formValues.title.trim() || !formValues.content.trim()) return;
-    createMutation.mutate(formValues);
+    createMutation.mutate(formValues , {
+       onSuccess: () => {
+         toast.success("Note created successfully")
+         navigate("/")
+       }
+    });
   };
 
   return (

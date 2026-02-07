@@ -1,72 +1,80 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import api from "../lib/api";
-import type { INote } from "../constants/types";
+import type { INote } from "../types/types";
 
-// get all notes
-export const useNotes = () => {
+interface UseNotesParams {
+  page: number;
+  limit: number;
+  title?: string;
+}
+
+// Get all notes
+export const useNotes = ({ page, limit, title }: UseNotesParams) => {
   return useQuery({
-    queryKey: ["notes"],
+    queryKey: ["notes", page, title],
     queryFn: async () => {
-      const res = await api.get("/");
-      return res.data.data.notes as INote[];
+      const res = await api.get("/", {
+        params: { page, limit, title },
+      });
+
+      // Always return data, even if empty
+      return res.data.data || {
+        notes: [],
+        total: 0,
+        page,
+        limit,
+      };
     },
+    keepPreviousData: true,
   });
 };
 
-
-// Fetch single note
+// ✅ Fetch single note
 export const useNote = (id?: string) => {
-  const result = useQuery({
+  return useQuery({
     queryKey: ["note", id],
     queryFn: async () => {
+      if (!id) throw new Error("Note ID is required");
+
       const res = await api.get(`/${id}`);
-      return res.data.note as INote;
+      const note = res?.data?.note;
+
+      // Throw error if note not found
+      if (!note) throw new Error("Note not found");
+
+      return note as INote;
     },
     enabled: !!id,
   });
-
-  return result;
 };
-
 
 // Create note
 export const useCreateNote = () => {
-  const navigate = useNavigate();
-
   return useMutation({
     mutationFn: async (newNote: { title: string; content: string }) => {
       const res = await api.post("/", newNote);
-      return res.data; // usually backend returns the created note
-    },
-    onSuccess: () => {
-      navigate("/"); // Redirect to home after success
+      return res?.data;
     },
   });
 };
-
 
 // Update note
 export const useUpdateNote = (id?: string) => {
-  const navigate = useNavigate();
-
   return useMutation({
     mutationFn: async (updatedNote: { title: string; content: string }) => {
       const res = await api.patch(`/${id}`, updatedNote);
-      return res.data.note as INote;
+      const note = res?.data?.note;
+      if (!note) throw new Error("Failed to update note");
+      return note as INote;
     },
-    onSuccess: () => navigate("/"),
   });
 };
 
-// Delete note
-export const useDeleteNote = (id?: string) => {
-  const navigate = useNavigate();
-
+//Delete note
+export const useDeleteNote = () => {
   return useMutation({
-    mutationFn: async () => {
+    mutationFn: async (id: string) => {
       await api.delete(`/${id}`);
     },
-    onSuccess: () => navigate("/"),
   });
 };

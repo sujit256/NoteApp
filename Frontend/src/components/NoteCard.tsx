@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import type { INote } from "../constants/types";
+import type { INote } from "../types/types";
 
 interface NoteCardProps {
   note: INote;

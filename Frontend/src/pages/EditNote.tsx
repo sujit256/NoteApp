@@ -1,12 +1,14 @@
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useNote, useUpdateNote } from "../hooks/useNote";
 import { useForm } from "../hooks/useForm";
+import { toast } from "sonner";
 
 const EditNote = () => {
   const { id } = useParams();
   const { data: note, isLoading, error } = useNote(id);
   const updateMutation = useUpdateNote(id);
+  const navigate = useNavigate()
 
 
   const { formValues, handleChange, setFormValues } = useForm({
@@ -24,7 +26,12 @@ const EditNote = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formValues.title.trim() || !formValues.content.trim()) return;
-    updateMutation.mutate(formValues);
+    updateMutation.mutate(formValues , {
+       onSuccess:() => {
+          toast.success("Note updated successfully")
+           navigate("/")
+       }
+    });
   };
 
   if (isLoading)
