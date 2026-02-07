@@ -52,20 +52,22 @@ export const createNote = async (req: Request, res: Response) => {
 };
 
 //update note
+
 export const updateNote = async (req: Request, res: Response) => {
   try {
     const { title, content } = req.body;
 
-    if(!title && !content) {
-         return res.status(400).json({
-            message:"Both title and content are required"
-         })
+    // Check if at least one field is provided
+    if (!title && !content) {
+      return res.status(400).json({
+        message: "Both title and content are required",
+      });
     }
 
     const updatedNote = await Note.findByIdAndUpdate(
       req.params.id,
       { title, content },
-      { new: true },
+      { new: true, runValidators: true } 
     );
 
     if (!updatedNote) {
@@ -74,12 +76,14 @@ export const updateNote = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      updateNote,
+      note: updatedNote, 
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 // delete note
 
